@@ -1,0 +1,76 @@
+cmake_minimum_required(VERSION 3.5)
+project(EvoSim)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+set(CMAKE_USE_RELATIVE_PATHS ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
+#GRABBING OMP
+find_package(OpenMP REQUIRED)
+
+find_package(Qt6 COMPONENTS Core Widgets Xml REQUIRED)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+
+set (CMAKE_AUTOMOC ON)
+set (CMAKE_AUTOUIC ON)
+set (CMAKE_AUTORCC ON)
+file(GLOB uiFiles "*.ui")
+qt6_wrap_ui(UISrcs ${uiFiles})
+
+#GRABBING VTK
+find_package(VTK
+ COMPONENTS
+    CommonColor
+    CommonCore
+    CommonDataModel
+    FiltersCore
+    FiltersSources
+    IOImage
+    ImagingHybrid
+    InteractionWidgets
+    RenderingCore
+    RenderingVolumeOpenGL2
+    #
+    # These modules are suggested since they implement an existing module.
+    # You may need to uncomment one or more of these.
+    # If vtkRenderWindow is used and you want to use OpenGL,
+    #   you also need the RenderingOpenGL2 module.
+    # If vtkRenderWindowInteractor is used,
+    #    uncomment RenderingUI and possibly InteractionStyle.
+    # If text rendering is used, uncomment RenderingFreeType
+    #
+    # FiltersParallel   # implements VTK::FiltersCore
+    InteractionStyle  # implements VTK::RenderingCore
+    # RenderingCellGrid # implements VTK::RenderingCore
+    # RenderingFreeType # implements VTK::RenderingCore
+    RenderingOpenGL2  # implements VTK::RenderingCore
+    RenderingUI       # implements VTK::RenderingCore
+)
+add_library(AuxFuncs AuxFuncs.hpp AuxFuncs.cpp)
+
+add_library(MTEngine MTEngine.hpp MTEngine.cpp)
+
+add_library(Matrix Matrix.hpp Matrix.cpp)
+target_link_libraries(Matrix PRIVATE AuxFuncs)
+
+
+
+add_library(Visualization Visualization.hpp Visualization.cpp)
+target_link_libraries(Visualization PRIVATE ${VTK_LIBRARIES} Matrix MTEngine)
+#vtk_module_autoinit(TARGETS Visualization MODULES ${VTK_LIBRARIES})
+vtk_module_autoinit(
+  TARGETS Visualization
+ # MODULES ${VTK_LIBRARIES} # "works", but is not recommended.
+ MODULES    VTK::RenderingOpenGL2 VTK::GUISupportQt VTK::DomainsChemistry
+   VTK::RenderingVolumeOpenGL2 VTK::ViewsCore VTK::RenderingFreeType
+   VTK::ChartsCore VTK::ViewsContext2D VTK::RenderingContextOpenGL2
+)
+
+add_library(Domain Domain.hpp Domain.cpp)
+target_link_libraries(Domain PRIVATE Matrix Visualization)
+
+#add_library(GUI UiWrapper.hpp UiWrapper.cpp FromDesigner.ui)
+#target_link_libraries(GUI Qt6::Core Qt6::Gui Qt6::Widgets Domain)
+
+add_executable(App UiWrapper.hpp UiWrapper.cpp FromDesigner.ui ApplicationDriver.cpp)
+target_link_libraries(App PRIVATE Domain Qt6::Core Qt6::Gui Qt6::Widgets)

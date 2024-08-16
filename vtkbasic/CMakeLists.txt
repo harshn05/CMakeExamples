@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.5)
+project(EvoSim)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+set(CMAKE_USE_RELATIVE_PATHS ON)
+#GRABBING VTK
+find_package(VTK REQUIRED)
+add_executable(MAIN main.cpp)
+target_link_libraries(MAIN ${VTK_LIBRARIES})
+#vtk_module_autoinit(TARGETS MAIN MODULES ${VTK_LIBRARIES})
